@@ -1,0 +1,423 @@
+---
+title: "Final Project Group 53"
+author: "Bhuvan Kumar Panduranga, Pratik Bhojkar"
+date: "2023-11-24"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Import needed packages
+#library(tidyverse)
+library(ggplot2) 
+#library(tigerstats) 
+#library(reticulate)
+library(MASS)
+library(MLmetrics)
+library(dplyr)
+```
+
+## Part 1 : Data reading and Visualization
+
+```{r}
+auto_mpg<-read.csv("B:/Prog for DA/auto-mpg.csv", sep = ',')
+head(auto_mpg)
+summary(auto_mpg)
+```
+```{r}
+summary(auto_mpg)
+```
+
+```{r}
+dim(auto_mpg)
+```
+
+The Auto MPG set has 398 rows and 9 columns.
+
+```{r}
+str(auto_mpg)
+```
+
+The data types covered are int, num and character . It has one strings.
+
+```{r}
+#factor(data$model_year)['levels']
+print("Unique model years")
+unique(auto_mpg$model.year)
+```
+
+This are the years when the models were built.
+
+```{r}
+print("Unique origin")
+unique(auto_mpg$origin)
+```
+
+This are the unique origins or say countries that are given numbers, for eg- 1='China', 2='japan', 3='America'. This is a categorical value.
+
+```{r}
+print("Unique cylinders")
+unique(auto_mpg$cylinders)
+```
+## **Data Cleaning**
+
+## Converting the horsepower from char to int and Car name from char to factor
+
+```{r}
+auto_mpg$horsepower <- as.integer(as.character(auto_mpg$horsepower))
+
+# Converting 'car.name' to a factor 
+auto_mpg$car.name <- as.factor(auto_mpg$car.name)
+
+# Displaying the first few rows of the dataset
+head(auto_mpg)
+
+summary(auto_mpg)
+
+```
+
+
+```{r}
+null_values<-colSums(is.na(auto_mpg))
+null_values
+```
+
+##Removing the null values
+```{r}
+auto_mpg <- na.omit(auto_mpg)
+null_values_after_clean<-colSums(is.na(auto_mpg))
+null_values_after_clean
+dim(auto_mpg)
+```
+now the data set has 392 points and 9 variables.
+
+
+```{r}
+
+table(auto_mpg$cylinders)
+
+```
+```{r}
+sum(duplicated(auto_mpg)) 
+```
+
+The cars have one of the numbers of the cylinders. This is a categorial data that we have because the are choose from one of the following categories
+
+```{r}
+mean_mpg_by_cylinders <- tapply(auto_mpg$mpg, auto_mpg$cylinders, mean)
+mean_mpg_by_cylinders
+```
+
+This is the mean of the MPG group wise. The average of MPG in unique cylinders.
+
+```{r}
+#minimum value of the mpg/ lowest mpg by the car
+min_mpg<-min(auto_mpg$mpg)
+min_mpg
+
+#max mpg of all the cars in the dataset
+max_mpg<-max(auto_mpg$mpg)
+max_mpg
+
+
+# Calculate min and max MPG for each unique cylinder value
+min_max_mpg_by_cylinders <- tapply(auto_mpg$mpg, auto_mpg$cylinders, function(x) c(min(x), max(x)))
+
+# Display the results
+print(min_max_mpg_by_cylinders)
+```
+
+
+
+
+## Part 2: Graphical Representation
+
+Histogram of MPG to see the distribution of the data
+
+```{r}
+hist(auto_mpg$mpg, breaks = 30, col = "red", main = "Histogram of mpg",xlab="mpg", ylab = " frequency (number of cars)")
+```
+
+```{r}
+par(mfrow = c(1, 1))
+boxplot(auto_mpg$mpg, main= "Boxplot for Mpg")
+abline(h = min(auto_mpg$mpg), col = "Blue")
+abline(h = max(auto_mpg$mpg), col = "Yellow")
+abline(h = median(auto_mpg$mpg), col = "Green")
+abline(h = quantile(auto_mpg$mpg, c(0.25, 0.75)), col = "Red")
+```
+
+This is a box plot to check if there are any outliers. We can conclude from the observation that there are no a outlier.
+
+```{r}
+ggplot(auto_mpg, aes(x=acceleration)) + 
+ geom_histogram(aes(y=..density..), colour="black", fill="white", binwidth = 1, bins = 30)+
+ geom_density(alpha=.2, fill="#FF6666") 
+```
+
+This is a histogram for the acceleration. We can conclude that this is a approximately linearly distributed.
+
+```{r}
+# Load ggplot2 package if not already loaded
+library(ggplot2)
+
+# Creating a boxplot to compare 'mpg' by 'origin'
+ggplot(auto_mpg, aes(x = as.factor(origin), y = mpg)) +
+  geom_boxplot(fill = "skyblue") +
+  labs(title = "Boxplot of MPG by Origin", x = "Origin", y = "MPG")
+
+```
+
+This is a box plot to see the outliers ffor the origin. We conclude that there are outliers. We can also see that MPG for the cars of origin 3 is greater. There may be many factors that may affect it.
+
+```{r}
+ggplot(auto_mpg, aes(x = as.factor(origin), y = weight)) +
+  geom_boxplot(fill = "skyblue") +
+  labs(title = "Boxplot of weight by Origin", x = "Origin", y = "weight")
+```
+
+Weight is one of the reasons. The region 3 is having autos with lower weight and with higher mpg as seen above. So we can say that the weight plays imp role in determining mpg.
+
+```{r}
+# Creating a histogram with overlay for 'mpg' by 'origin' with border
+ggplot(auto_mpg, aes(x = mpg, fill = as.factor(origin))) +
+  geom_histogram(position = "identity", alpha = 0.7, bins = 30, color = "black") +
+  labs(title = "Histogram of MPG with Overlay by Origin", x = "MPG", y = "Frequency") +
+  scale_fill_manual(values = c("skyblue", "lightgreen", "lightcoral"), name = "Origin") +
+  theme_minimal()
+
+```
+
+this is a overlay Histogram of MPG and origin. We see that one value is numeric and other is categorial.
+
+```{r}
+# Load ggplot2 package if not already loaded
+library(ggplot2)
+# Creating a histogram with overlay for 'mpg' by 'cylinders'
+ggplot(auto_mpg, aes(x = mpg, fill = as.factor(cylinders))) +
+  geom_histogram(position = "identity", alpha = 0.7, bins = 30, color="black") +
+  labs(title = "Histogram of MPG with Overlay by Cylinders", x = "MPG", y = "Frequency") +
+  scale_fill_manual(values = c("orange", "lightgreen", "lightcoral", "yellow", "skyblue"), name = "Cylinders") +
+  theme_minimal()
+```
+
+This shows mpg of cars with different cylinders.
+
+```{r}
+# Load ggplot2 package if not already loaded
+library(ggplot2)
+
+# Scattered plot for 'mpg' vs 'acceleration'
+scatter_acceleration <- ggplot(auto_mpg, aes(x = displacement, y = mpg)) +
+  geom_point(color = "skyblue") +
+  labs(title = " MPG vs Acceleration", x = "Acceleration", y = "MPG") +
+  theme_minimal()
+
+# Scattered plot for 'mpg' vs 'cylinders'
+scatter_cylinders <- ggplot(auto_mpg, aes(x = as.factor(cylinders), y = mpg)) +
+  geom_point(color = "lightgreen") +
+  labs(title = " MPG vs Cylinders", x = "Cylinders", y = "MPG") +
+  theme_minimal()
+
+# Scattered plot for 'mpg' vs 'weight'
+scatter_weight <- ggplot(auto_mpg, aes(x = weight, y = mpg)) +
+  geom_point(color = "lightcoral") +
+  labs(title = " MPG vs Weight", x = "Weight", y = "MPG") +
+  theme_minimal()
+
+# Displaying the scattered plots side by side
+library(gridExtra)
+grid.arrange(scatter_acceleration, scatter_cylinders, scatter_weight, ncol = 3)
+
+```
+
+This are the scatterplots that are made to see the relation between mpg and different variables.
+
+```{r}
+# Scattered plot for weight vs mpg
+ggplot(auto_mpg, aes(x = weight, y = mpg)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Weight vs MPG", x = "Weight", y = "MPG") +
+  theme_minimal()
+# Scattered plot for horsepower vs mpg
+ggplot(auto_mpg, aes(x = horsepower, y = mpg)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Horsepower vs MPG", x = "Horsepower", y = "MPG") +
+  theme_minimal()
+# Scattered plot for displacement vs mpg
+ggplot(auto_mpg, aes(x = displacement, y = mpg)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Displacement vs MPG", x = "Displacement", y = "MPG") +
+  theme_minimal()
+```
+
+wee can see from the fighure as the hp, weight, displacement incresease the mpg decreases.
+
+
+
+#### Hypothesis Test:
+
+```{r}
+# Converting 'origin' to a factor (if it's not already)
+auto_mpg$origin <- as.factor(auto_mpg$origin)
+# Performing ANOVA test
+anova_result <- aov(mpg ~ origin, data = auto_mpg)
+# Summarize the ANOVA results
+summary(anova_result)
+```
+
+**Null hypothesis:** There is no significant difference in MPG between cars from different origins.
+
+**Alternative hypothesis:** There is at least one significant difference in MPG between cars from different origins.
+
+
+The ANOVA test performed is a valid way to test for a significant relationship between MPG and the origin of the cars. The ANOVA results show that there is a significant difference in MPG between cars from different origins (p-value < 0.001). This means that we can reject the null hypothesis and conclude that there is at least one significant relationship between MPG and origin.
+
+
+## Linear Regression
+
+```{r}
+pairs(auto_mpg[,1:8], col = "blue")
+# Excluding 'carname' and any other non-numeric variables
+numeric_columns <- auto_mpg[, sapply(auto_mpg, is.numeric)]
+# Calculating the correlation matrix for numeric variables
+correlation_matrix <- cor(numeric_columns)
+# Print the correlation matrix
+print(correlation_matrix)
+```
+```{r}
+print(correlation_matrix)
+```
+
+Pairs function show a us the correlation between the variables.
+
+### Simple linear regression
+
+For Linear Regression, we are going to determine what all factors are dependent on the mpg variable.
+
+we divide the dataset into training(80) and testing data(20).
+
+```{r}
+library(MASS)
+train_index = sample(2,nrow(auto_mpg),replace=TRUE, prob = c(0.8,0.2))
+auto_mpg_Training <- auto_mpg[train_index==1,]
+auto_mpg_Test <- auto_mpg[train_index==2,]
+dim(auto_mpg_Training)
+```
+
+```{r}
+dim(auto_mpg_Test)
+```
+
+**Regression:Modelling the relationship between dependent variable and one or more independent variables..**
+
+```{r}
+lm_model1 <- lm(mpg ~ weight, data=auto_mpg_Training)
+summary(lm_model1)
+```
+
+In summary, the linear regression model shows that there is a statistically significant relationship between weight and mpg in the auto.
+
+```{r}
+lm_model2 <- lm(mpg ~ horsepower, data=auto_mpg_Training)
+summary(lm_model2)
+```
+
+In summary, the linear regression model shows that there is a statistically significant relationship between horsepower and mpg in the auto.
+
+```{r}
+
+predictions <- predict(lm_model1, newdata = auto_mpg_Test)
+predictions1 <- predict(lm_model2, newdata = auto_mpg_Test)
+summary(predictions)
+summary(predictions1)
+```
+
+```{r}
+MAE(y_pred = predictions, y_true = auto_mpg_Test$mpg)
+MAE(y_pred = predictions1, y_true = auto_mpg_Test$mpg)
+```
+
+```{r}
+MSE(y_pred = predictions, y_true = auto_mpg_Test$mpg)
+MSE(y_pred = predictions1, y_true = auto_mpg_Test$mpg)
+```
+
+**multiple linear regression**
+
+```{r}
+mlm_model <- lm(mpg ~ ., data = auto_mpg_Training[,1:8])
+# Print's the summary of the multiple linear regression model
+summary(mlm_model)
+```
+
+We exclude the variable called car.name. The model indicates that the contributing factors to mpg are origin, weight, model.year, displacement.
+
+```{r}
+ypred <-predict(object = mlm_model, newdata = auto_mpg_Test[,1:8])
+summary(ypred)
+```
+
+```{r}
+MAE(y_pred = ypred, y_true = auto_mpg_Test$mpg)
+```
+
+```{r}
+MSE(y_pred = ypred, y_true = auto_mpg_Test$mpg)
+```
+
+MAE: Mean absolute error, measure of average mistake in a collection of prediction. MSE:Average squared difference between estimated values and actual value.
+
+### forward stepwise egression
+
+```{r}
+intercept_only <- lm(mpg ~ 1, data=auto_mpg_Training[,1:8])
+
+all <- lm(mpg~., data=auto_mpg_Training[,1:8])
+# performing forward step-wise regression
+forward <- stepAIC (intercept_only, direction='forward',scope = formula(all))
+```
+
+```{r}
+summary(forward)
+```
+
+```{r}
+ypred_forward <-predict(object = forward, newdata = auto_mpg_Test[,1:8])
+MAE(y_pred = ypred_forward, y_true = auto_mpg_Test$mpg)
+```
+
+```{r}
+MSE(y_pred = ypred_forward, y_true = auto_mpg_Test$mpg)
+```
+
+### backward stepwise regression
+
+```{r}
+intercept_only <- lm(mpg ~ 1, data=auto_mpg_Training[,1:8])
+
+all <- lm(mpg~., data=auto_mpg_Training[,1:8])
+backward <- stepAIC (all, direction='backward')
+```
+
+```{r}
+summary(backward)
+```
+
+```{r}
+ypred_backward <-predict(object = backward, newdata = auto_mpg_Test[,1:8])
+MAE(y_pred = ypred_backward, y_true = auto_mpg_Test$mpg)
+```
+
+```{r}
+MSE(y_pred = ypred_backward, y_true = auto_mpg_Test$mpg)
+```
